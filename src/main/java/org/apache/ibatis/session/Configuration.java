@@ -150,12 +150,18 @@ public class Configuration {
    */
   protected Class<?> configurationFactory;
 
+  // Mapper注册器
   protected final MapperRegistry mapperRegistry = new MapperRegistry(this);
+  // 拦截器链
   protected final InterceptorChain interceptorChain = new InterceptorChain();
+  // 类型处理器注册器
   protected final TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry(this);
+  // 类型别名注册器
   protected final TypeAliasRegistry typeAliasRegistry = new TypeAliasRegistry();
+  // 语言驱动注册器
   protected final LanguageDriverRegistry languageRegistry = new LanguageDriverRegistry();
 
+  // mappedStatement集合（xml | mapper中定义的每个方法）
   protected final Map<String, MappedStatement> mappedStatements = new StrictMap<MappedStatement>(
       "Mapped Statements collection")
           .conflictMessageProducer((savedValue, targetValue) -> ". please check " + savedValue.getResource() + " and "
@@ -716,8 +722,10 @@ public class Configuration {
 
   public StatementHandler newStatementHandler(Executor executor, MappedStatement mappedStatement,
       Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+    // 创建路由选择语句处理器
     StatementHandler statementHandler = new RoutingStatementHandler(executor, mappedStatement, parameterObject,
         rowBounds, resultHandler, boundSql);
+    // 插件在这里插入
     return (StatementHandler) interceptorChain.pluginAll(statementHandler);
   }
 
@@ -726,8 +734,10 @@ public class Configuration {
   }
 
   public Executor newExecutor(Transaction transaction, ExecutorType executorType) {
+    // 获取执行器类型，未设置则使用默认Simple
     executorType = executorType == null ? defaultExecutorType : executorType;
     Executor executor;
+    // 根据执行器类型创建执行器对象
     if (ExecutorType.BATCH == executorType) {
       executor = new BatchExecutor(this, transaction);
     } else if (ExecutorType.REUSE == executorType) {
@@ -735,9 +745,12 @@ public class Configuration {
     } else {
       executor = new SimpleExecutor(this, transaction);
     }
+    // 判断是否开启二级缓存
     if (cacheEnabled) {
+      // 装饰者模式
       executor = new CachingExecutor(executor);
     }
+    // 此处调用插件，通过插件修改execute行为
     return (Executor) interceptorChain.pluginAll(executor);
   }
 

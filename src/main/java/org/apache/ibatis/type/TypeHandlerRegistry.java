@@ -79,6 +79,7 @@ public final class TypeHandlerRegistry {
    * @since 3.5.4
    */
   public TypeHandlerRegistry(Configuration configuration) {
+    // 类型处理器 - 实体类和数据库字段映射处理器
     this.unknownTypeHandler = new UnknownTypeHandler(configuration);
 
     register(Boolean.class, new BooleanTypeHandler());
@@ -457,6 +458,7 @@ public final class TypeHandlerRegistry {
       }
     }
     try {
+      // 反射创建处理器对象
       Constructor<?> c = typeHandlerClass.getConstructor();
       return (TypeHandler<T>) c.newInstance();
     } catch (Exception e) {

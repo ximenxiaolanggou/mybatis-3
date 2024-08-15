@@ -46,7 +46,9 @@ import org.apache.ibatis.session.SqlSession;
  */
 public class MapperMethod {
 
+  // 记录SQL语句的名称和类型
   private final SqlCommand command;
+  // mapper接口中对应的方法的相关信息
   private final MethodSignature method;
 
   public MapperMethod(Class<?> mapperInterface, Method method, Configuration config) {
@@ -77,13 +79,18 @@ public class MapperMethod {
           executeWithResultHandler(sqlSession, args);
           result = null;
         } else if (method.returnsMany()) {
+          // 结果有多条记录
           result = executeForMany(sqlSession, args);
         } else if (method.returnsMap()) {
+          // 返回结果是map
           result = executeForMap(sqlSession, args);
         } else if (method.returnsCursor()) {
+          // 返回结果为游标
           result = executeForCursor(sqlSession, args);
         } else {
+          // 处理返回值为单一对象的方法
           Object param = method.convertArgsToSqlCommandParam(args);
+          // 查询结果
           result = sqlSession.selectOne(command.getName(), param);
           if (method.returnsOptional() && (result == null || !method.getReturnType().equals(result.getClass()))) {
             result = Optional.ofNullable(result);
@@ -220,10 +227,14 @@ public class MapperMethod {
     private final SqlCommandType type;
 
     public SqlCommand(Configuration configuration, Class<?> mapperInterface, Method method) {
+      // 获取方法名
       final String methodName = method.getName();
+      // class对象
       final Class<?> declaringClass = method.getDeclaringClass();
+      // 接口名称 + 方法名称获取MappedStatement对象
       MappedStatement ms = resolveMappedStatement(mapperInterface, methodName, declaringClass, configuration);
       if (ms == null) {
+        // 处理@Flush注解
         if (method.getAnnotation(Flush.class) == null) {
           throw new BindingException(
               "Invalid bound statement (not found): " + mapperInterface.getName() + "." + methodName);
@@ -282,6 +293,7 @@ public class MapperMethod {
     private final ParamNameResolver paramNameResolver;
 
     public MethodSignature(Configuration configuration, Class<?> mapperInterface, Method method) {
+      // 获取返回值类型
       Type resolvedReturnType = TypeParameterResolver.resolveReturnType(method, mapperInterface);
       if (resolvedReturnType instanceof Class<?>) {
         this.returnType = (Class<?>) resolvedReturnType;
@@ -290,14 +302,18 @@ public class MapperMethod {
       } else {
         this.returnType = method.getReturnType();
       }
+      // 初始化 returnsVoid、returnsMany、returnsCursor、returnsOptional
       this.returnsVoid = void.class.equals(this.returnType);
       this.returnsMany = configuration.getObjectFactory().isCollection(this.returnType) || this.returnType.isArray();
       this.returnsCursor = Cursor.class.equals(this.returnType);
       this.returnsOptional = Optional.class.equals(this.returnType);
+      // 若MethodSignature对应的方法的返回值是Map且定制了@MapKey注解，则使用getMapKey方法处理
       this.mapKey = getMapKey(method);
       this.returnsMap = this.mapKey != null;
+      // 初始化rowBoundsIndex、resultHandlerIndex字段
       this.rowBoundsIndex = getUniqueParamIndex(method, RowBounds.class);
       this.resultHandlerIndex = getUniqueParamIndex(method, ResultHandler.class);
+      // 创建 ParamNameResolver对象
       this.paramNameResolver = new ParamNameResolver(configuration, method);
     }
 

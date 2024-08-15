@@ -94,7 +94,9 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   public void parse() {
+    // 判断是否已经加载过（加载过的会放置到）Configuration对象loadedResources中（set集合）
     if (!configuration.isResourceLoaded(resource)) {
+      // 获取mapper节点（根节点）
       configurationElement(parser.evalNode("/mapper"));
       configuration.addLoadedResource(resource);
       bindMapperForNamespace();
@@ -110,16 +112,27 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void configurationElement(XNode context) {
     try {
+      // 命名空间
       String namespace = context.getStringAttribute("namespace");
+      // 命名空间非空判断
       if (namespace == null || namespace.isEmpty()) {
         throw new BuilderException("Mapper's namespace cannot be empty");
       }
+      // builderAssistant对象中设置当前namespace
       builderAssistant.setCurrentNamespace(namespace);
+      // cache-ref 标签解析
       cacheRefElement(context.evalNode("cache-ref"));
+      // cache 标签解析
       cacheElement(context.evalNode("cache"));
+      // parameterMap标签解析
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
+      // resultMap标签解析
       resultMapElements(context.evalNodes("/mapper/resultMap"));
+      // sql标签解析
       sqlElement(context.evalNodes("/mapper/sql"));
+      // statement（增删改查片段解析）
+      // context.evalNodes 解析出增删改查片段
+      // buildStatementFromContext：将上面解析的结果构建成一个个statement对象
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);
@@ -134,10 +147,13 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   private void buildStatementFromContext(List<XNode> list, String requiredDatabaseId) {
+    // 循环解析出来的增删改查sql（包含标签）
     for (XNode context : list) {
+      // 创建xmlstatement解析器
       final XMLStatementBuilder statementParser = new XMLStatementBuilder(configuration, builderAssistant, context,
           requiredDatabaseId);
       try {
+        // 解析
         statementParser.parseStatementNode();
       } catch (IncompleteElementException e) {
         configuration.addIncompleteStatement(statementParser);
@@ -310,6 +326,7 @@ public class XMLMapperBuilder extends BaseBuilder {
       String id = context.getStringAttribute("id");
       id = builderAssistant.applyCurrentNamespace(id, false);
       if (databaseIdMatchesCurrent(id, databaseId, requiredDatabaseId)) {
+        // id：mapper全限定名 + sql片段id
         sqlFragments.put(id, context);
       }
     }

@@ -113,11 +113,15 @@ public class MapperAnnotationBuilder {
 
   public void parse() {
     String resource = type.toString();
+    // 判断是否已记载过
     if (!configuration.isResourceLoaded(resource)) {
       loadXmlResource();
       configuration.addLoadedResource(resource);
+      // 设置当前命名空间
       assistant.setCurrentNamespace(type.getName());
+      // 解析cache
       parseCache();
+      // 解析cache-ref
       parseCacheRef();
       for (Method method : type.getMethods()) {
         if (!canHaveStatement(method)) {
@@ -147,8 +151,10 @@ public class MapperAnnotationBuilder {
     // to prevent loading again a resource twice
     // this flag is set at XMLMapperBuilder#bindMapperForNamespace
     if (!configuration.isResourceLoaded("namespace:" + type.getName())) {
+      // 获取xml文件
       String xmlResource = type.getName().replace('.', '/') + ".xml";
       // #1347
+      // 加载
       InputStream inputStream = type.getResourceAsStream("/" + xmlResource);
       if (inputStream == null) {
         // Search XML mapper that is not in the module but in the classpath.
@@ -159,8 +165,10 @@ public class MapperAnnotationBuilder {
         }
       }
       if (inputStream != null) {
+        // 创建解析器
         XMLMapperBuilder xmlParser = new XMLMapperBuilder(inputStream, assistant.getConfiguration(), xmlResource,
             configuration.getSqlFragments(), type.getName());
+        // 解析
         xmlParser.parse();
       }
     }
